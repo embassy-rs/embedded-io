@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.assist.importGranularity": "module",
+    "rust-analyzer.cargo.features": [
+        "defmt",
+        "async",
+    ]
+}
