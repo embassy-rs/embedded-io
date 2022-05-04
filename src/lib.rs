@@ -11,6 +11,9 @@ mod fmt;
 pub mod async_;
 pub mod blocking;
 
+#[cfg(feature = "std")]
+pub mod adapters;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
@@ -19,7 +22,7 @@ pub enum ErrorKind {
     Other,
 }
 
-pub trait Error {
+pub trait Error: core::fmt::Debug {
     fn kind(&self) -> ErrorKind;
 }
 

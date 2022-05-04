@@ -3,5 +3,6 @@
     "rust-analyzer.cargo.features": [
         "defmt",
         "async",
+        "std",
     ]
 }
