@@ -26,3 +26,9 @@ pub trait Error {
 pub trait Io {
     type Error: Error;
 }
+
+impl Error for core::convert::Infallible {
+    fn kind(&self) -> ErrorKind {
+        match *self {}
+    }
+}
