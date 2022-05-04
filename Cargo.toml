@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-async = []
-std = []
+async = ["dep:futures"]
+std = ["futures?/std"]
 
 [dependencies]
 defmt = { version = "0.3", optional = true }
+futures = { version = "0.3.21", default-features = false, optional = true }
 log = { version = "0.4.14", optional = true }
