@@ -11,6 +11,8 @@ mod fmt;
 pub mod async_;
 pub mod blocking;
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum ErrorKind {
     /// Unspecified error kind.
