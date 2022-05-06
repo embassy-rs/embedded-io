@@ -2,7 +2,19 @@
 
 [![Documentation](https://docs.rs/embedded-io/badge.svg)](https://docs.rs/embedded-io)
 
-blah
+IO traits for embedded systems.
+
+Rust's `std::io` traits are not available in `no_std` targets, mainly because `std::io::Error`
+requires allocation. This crate contains replacement equivalent traits, usable in `no_std`
+targets.
+
+The only difference with `std::io` is `Error` is an associated type. This allows each implementor 
+to return its own error type, while avoiding `dyn` or `Box`. This is how errors are handled in [`embedded-hal`](https://github.com/rust-embedded/embedded-hal/).
+
+Async variations of the traits are also available, returning futures using generic associated types.
+Note this design is significantly different from both `futures::io` and `tokio::io`. The result is much
+more ergonomic, at the expense of requiring nightly.
+
 
 ## License
 
