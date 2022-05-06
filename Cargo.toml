@@ -2,6 +2,14 @@
 name = "embedded-io"
 version = "0.1.0"
 edition = "2021"
+description = "Embedded IO traits"
+repository = "https://github.com/embassy-rs/embedded-io"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+categories = [
+    "embedded",
+    "no-std",
+]
 
 [features]
 async = ["dep:futures"]
