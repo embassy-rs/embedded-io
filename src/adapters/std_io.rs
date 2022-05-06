@@ -1,27 +1,29 @@
 use super::to_io_error;
 
+/// Adapter from `std::io` traits.
 pub struct FromStd<T: ?Sized> {
     inner: T,
 }
 
 impl<T> FromStd<T> {
-    pub fn new(inner: T) -> Self
-    where
-        T: Sized,
-    {
+    /// Create a new adapter.
+    pub fn new(inner: T) -> Self {
         Self { inner }
     }
 
+    /// Consume the adapter, returning the inner object.
     pub fn into_inner(self) -> T {
         self.inner
     }
 }
 
 impl<T: ?Sized> FromStd<T> {
+    /// Borrow the inner object.
     pub fn inner(&self) -> &T {
         &self.inner
     }
 
+    /// Mutably borrow the inner object.
     pub fn inner_mut(&mut self) -> &mut T {
         &mut self.inner
     }
@@ -46,25 +48,30 @@ impl<T: std::io::Write + ?Sized> crate::blocking::Write for FromStd<T> {
     }
 }
 
+/// Adapter to `std::io` traits.
 pub struct ToStd<T: ?Sized> {
     inner: T,
 }
 
 impl<T> ToStd<T> {
+    /// Create a new adapter.
     pub fn new(inner: T) -> Self {
         Self { inner }
     }
 
+    /// Consume the adapter, returning the inner object.
     pub fn into_inner(self) -> T {
         self.inner
     }
 }
 
 impl<T: ?Sized> ToStd<T> {
+    /// Borrow the inner object.
     pub fn inner(&self) -> &T {
         &self.inner
     }
 
+    /// Mutably borrow the inner object.
     pub fn inner_mut(&mut self) -> &mut T {
         &mut self.inner
     }

@@ -3,25 +3,31 @@ use core::pin::Pin;
 
 use futures::future::poll_fn;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+/// Adapter from `futures::io` traits.
 pub struct FromFutures<T: ?Sized> {
     inner: T,
 }
 
 impl<T> FromFutures<T> {
+    /// Create a new adapter.
     pub fn new(inner: T) -> Self {
         Self { inner }
     }
 
+    /// Consume the adapter, returning the inner object.
     pub fn into_inner(self) -> T {
         self.inner
     }
 }
 
 impl<T: ?Sized> FromFutures<T> {
+    /// Borrow the inner object.
     pub fn inner(&self) -> &T {
         &self.inner
     }
 
+    /// Mutably borrow the inner object.
     pub fn inner_mut(&mut self) -> &mut T {
         &mut self.inner
     }

@@ -11,3 +11,7 @@ std = ["futures?/std"]
 defmt = { version = "0.3", optional = true }
 futures = { version = "0.3.21", default-features = false, optional = true }
 log = { version = "0.4.14", optional = true }
+
+[package.metadata.docs.rs]
+features = ["std", "async", "defmt"]
+rustdoc-args = ["--cfg", "docsrs"]
