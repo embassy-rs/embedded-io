@@ -37,7 +37,7 @@ impl<T: ?Sized> crate::Io for FromFutures<T> {
     type Error = std::io::Error;
 }
 
-impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::async_::Read for FromFutures<T> {
+impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromFutures<T> {
     type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
         Self: 'a;
@@ -47,7 +47,7 @@ impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::async_::Read for FromFut
     }
 }
 
-impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::async_::Write for FromFutures<T> {
+impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromFutures<T> {
     type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
         Self: 'a;

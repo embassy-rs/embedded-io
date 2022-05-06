@@ -12,7 +12,7 @@ mod fmt;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-pub mod async_;
+pub mod asynch;
 pub mod blocking;
 
 #[cfg(feature = "std")]
