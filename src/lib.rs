@@ -39,7 +39,7 @@ pub trait Error: core::fmt::Debug {
 
 /// Base trait for all IO traits.
 ///
-/// All IO operations of all traits return the error defined in thsi trait.
+/// All IO operations of all traits return the error defined in this trait.
 ///
 /// Having a shared trait instead of having every trait define its own
 /// `io::Error` enforces all impls on the same type use the same error.
