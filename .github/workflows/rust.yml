@@ -20,3 +20,5 @@ jobs:
       - run: cargo check --features std
       - run: cargo check --features async
       - run: cargo check --features std,async
+      - run: RUSTUP_TOOLCHAIN=stable cargo check
+      - run: RUSTUP_TOOLCHAIN=stable cargo check --features std
