@@ -108,6 +108,20 @@ impl<T: ?Sized + Read> Read for &mut T {
     }
 }
 
+impl<T: ?Sized + BufRead> BufRead for &mut T {
+    type FillBufFuture<'a> = impl Future<Output = Result<&'a [u8], Self::Error>>
+    where
+        Self: 'a;
+
+    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a> {
+        T::fill_buf(self)
+    }
+
+    fn consume(&mut self, amt: usize) {
+        T::consume(self, amt)
+    }
+}
+
 impl<T: ?Sized + Write> Write for &mut T {
     type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
@@ -219,6 +233,22 @@ impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
     #[inline]
     fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
         T::read(self, buf)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+impl<T: ?Sized + BufRead> BufRead for alloc::boxed::Box<T> {
+    type FillBufFuture<'a> = impl Future<Output = Result<&'a [u8], Self::Error>>
+    where
+        Self: 'a;
+
+    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a> {
+        T::fill_buf(self)
+    }
+
+    fn consume(&mut self, amt: usize) {
+        T::consume(self, amt)
     }
 }
 

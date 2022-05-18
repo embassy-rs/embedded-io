@@ -140,6 +140,16 @@ impl<T: ?Sized + Read> Read for &mut T {
     }
 }
 
+impl<T: ?Sized + BufRead> BufRead for &mut T {
+    fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        T::fill_buf(self)
+    }
+
+    fn consume(&mut self, amt: usize) {
+        T::consume(self, amt)
+    }
+}
+
 impl<T: ?Sized + Write> Write for &mut T {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
@@ -219,6 +229,18 @@ impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         T::read(self, buf)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+impl<T: ?Sized + BufRead> BufRead for alloc::boxed::Box<T> {
+    fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        T::fill_buf(self)
+    }
+
+    fn consume(&mut self, amt: usize) {
+        T::consume(self, amt)
     }
 }
 
