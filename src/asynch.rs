@@ -160,3 +160,27 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
         T::flush(self)
     }
 }
+
+#[cfg(feature = "alloc")]
+impl Write for alloc::vec::Vec<u8> {
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
+        async move {
+            self.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+    }
+
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
+        async move { Ok(()) }
+    }
+}

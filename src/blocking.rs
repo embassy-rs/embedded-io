@@ -172,3 +172,17 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
         T::flush(self)
     }
 }
+
+#[cfg(feature = "alloc")]
+impl Write for alloc::vec::Vec<u8> {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
