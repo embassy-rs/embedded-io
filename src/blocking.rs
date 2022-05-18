@@ -12,6 +12,15 @@ pub enum ReadExactError<E> {
     Other(E),
 }
 
+impl<E: fmt::Debug> fmt::Display for ReadExactError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<E: fmt::Debug> std::error::Error for ReadExactError<E> {}
+
 /// Error returned by [`Write::write_fmt`]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -21,6 +30,15 @@ pub enum WriteFmtError<E> {
     /// Error returned by the inner Write.
     Other(E),
 }
+
+impl<E: fmt::Debug> fmt::Display for WriteFmtError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<E: fmt::Debug> std::error::Error for WriteFmtError<E> {}
 
 /// Blocking reader.
 ///
