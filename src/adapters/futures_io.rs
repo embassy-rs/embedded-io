@@ -3,7 +3,7 @@ use core::pin::Pin;
 
 use futures::future::poll_fn;
 
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
 /// Adapter from `futures::io` traits.
 pub struct FromFutures<T: ?Sized> {
     inner: T,

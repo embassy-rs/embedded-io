@@ -214,6 +214,7 @@ impl Write for &mut [u8] {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
@@ -222,6 +223,7 @@ impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
@@ -235,6 +237,7 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl Write for alloc::vec::Vec<u8> {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {

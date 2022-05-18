@@ -15,8 +15,9 @@ categories = [
 std = ["alloc", "futures?/std"]
 alloc = []
 
-async = ["dep:futures"]
-tokio = ["async", "dep:tokio"]
+async = []
+futures = ["std", "async", "dep:futures"]
+tokio = ["std", "async", "dep:tokio"]
 
 [dependencies]
 defmt = { version = "0.3", optional = true }
@@ -25,5 +26,5 @@ tokio = { version = "1", features = ["net"], default-features = false, optional 
 log = { version = "0.4.14", optional = true }
 
 [package.metadata.docs.rs]
-features = ["std", "async", "defmt"]
+features = ["std", "async", "defmt", "futures", "tokio"]
 rustdoc-args = ["--cfg", "docsrs"]

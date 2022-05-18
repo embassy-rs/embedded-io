@@ -18,8 +18,6 @@ mod fmt;
 pub mod asynch;
 pub mod blocking;
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub mod adapters;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -79,11 +77,13 @@ impl crate::Io for &mut [u8] {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + crate::Io> crate::Io for alloc::boxed::Box<T> {
     type Error = T::Error;
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl crate::Io for alloc::vec::Vec<u8> {
     type Error = core::convert::Infallible;
 }

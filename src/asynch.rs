@@ -210,6 +210,7 @@ impl Write for &mut [u8] {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
     type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
@@ -222,6 +223,7 @@ impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
     type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
@@ -243,6 +245,7 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl Write for alloc::vec::Vec<u8> {
     type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where

@@ -4,5 +4,7 @@
         "defmt",
         "async",
         "std",
+        "tokio",
+        "futures",
     ]
 }

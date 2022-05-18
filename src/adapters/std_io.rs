@@ -1,6 +1,7 @@
 use super::to_io_error;
 
 /// Adapter from `std::io` traits.
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub struct FromStd<T: ?Sized> {
     inner: T,
 }
@@ -49,6 +50,7 @@ impl<T: std::io::Write + ?Sized> crate::blocking::Write for FromStd<T> {
 }
 
 /// Adapter to `std::io` traits.
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub struct ToStd<T: ?Sized> {
     inner: T,
 }

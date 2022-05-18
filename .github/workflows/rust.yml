@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+  RUSTDOCFLAGS: --cfg=docsrs -Dwarnings
 
 jobs:
   test:
@@ -20,8 +22,12 @@ jobs:
       - run: cargo check --features alloc
       - run: cargo check --features std
       - run: cargo check --features async
+      - run: cargo check --features alloc,async
       - run: cargo check --features std,async
-      - run: cargo check --features std,async,tokio
+      - run: cargo check --features tokio
+      - run: cargo check --features futures
+      - run: cargo check --features tokio,futures
       - run: RUSTUP_TOOLCHAIN=stable cargo check
       - run: RUSTUP_TOOLCHAIN=stable cargo check --features alloc
       - run: RUSTUP_TOOLCHAIN=stable cargo check --features std
+      - run: cargo rustdoc --features std,async,defmt,tokio,futures
