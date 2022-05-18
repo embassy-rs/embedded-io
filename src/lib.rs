@@ -70,6 +70,10 @@ impl<T: ?Sized + crate::Io> crate::Io for &mut T {
     type Error = T::Error;
 }
 
+impl crate::Io for &[u8] {
+    type Error = core::convert::Infallible;
+}
+
 #[cfg(feature = "alloc")]
 impl<T: ?Sized + crate::Io> crate::Io for alloc::boxed::Box<T> {
     type Error = T::Error;
