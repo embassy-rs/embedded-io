@@ -18,6 +18,12 @@ mod futures_io;
 #[cfg(feature = "async")]
 pub use futures_io::*;
 
+#[cfg(all(feature = "async", feature = "tokio"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "async", feature = "tokio"))))]
+mod tokio;
+#[cfg(all(feature = "async", feature = "tokio"))]
+pub use crate::adapters::tokio::*;
+
 fn to_io_error<T: Debug>(err: T) -> std::io::Error {
     let kind = std::io::ErrorKind::Other;
     std::io::Error::new(kind, format!("{:?}", err))

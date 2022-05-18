@@ -96,12 +96,3 @@ pub trait Write: crate::Io {
         }
     }
 }
-
-/// Closeable resource
-pub trait Close: crate::Io {
-    /// Future returned by `close`
-    type CloseFuture<'a>: Future<Output = Result<(), Self::Error>>;
-
-    /// Close this resource.
-    fn close<'a>(self) -> Self::CloseFuture<'a>;
-}
