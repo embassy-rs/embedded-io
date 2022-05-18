@@ -12,8 +12,10 @@ categories = [
 ]
 
 [features]
+std = ["alloc", "futures?/std"]
+alloc = []
+
 async = ["dep:futures"]
-std = ["futures?/std"]
 tokio = ["async", "dep:tokio"]
 
 [dependencies]

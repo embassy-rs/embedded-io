@@ -132,3 +132,43 @@ pub trait Write: crate::Io {
         }
     }
 }
+
+impl<T: ?Sized + Read> Read for &mut T {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        T::read(self, buf)
+    }
+}
+
+impl<T: ?Sized + Write> Write for &mut T {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        T::write(self, buf)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        T::flush(self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        T::read(self, buf)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        T::write(self, buf)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        T::flush(self)
+    }
+}

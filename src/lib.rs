@@ -7,6 +7,9 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 // mod fmt MUST go first, so that others see its macros.
 mod fmt;
 
@@ -37,6 +40,18 @@ pub trait Error: core::fmt::Debug {
     fn kind(&self) -> ErrorKind;
 }
 
+impl Error for core::convert::Infallible {
+    fn kind(&self) -> ErrorKind {
+        match *self {}
+    }
+}
+
+impl Error for ErrorKind {
+    fn kind(&self) -> ErrorKind {
+        *self
+    }
+}
+
 /// Base trait for all IO traits.
 ///
 /// All IO operations of all traits return the error defined in this trait.
@@ -51,14 +66,11 @@ pub trait Io {
     type Error: Error;
 }
 
-impl Error for core::convert::Infallible {
-    fn kind(&self) -> ErrorKind {
-        match *self {}
-    }
+impl<T: ?Sized + crate::Io> crate::Io for &mut T {
+    type Error = T::Error;
 }
 
-impl Error for ErrorKind {
-    fn kind(&self) -> ErrorKind {
-        *self
-    }
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + crate::Io> crate::Io for alloc::boxed::Box<T> {
+    type Error = T::Error;
 }

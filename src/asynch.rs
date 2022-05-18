@@ -96,3 +96,67 @@ pub trait Write: crate::Io {
         }
     }
 }
+
+impl<T: ?Sized + Read> Read for &mut T {
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
+        T::read(self, buf)
+    }
+}
+
+impl<T: ?Sized + Write> Write for &mut T {
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
+        T::write(self, buf)
+    }
+
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
+        T::flush(self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
+        T::read(self, buf)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
+        T::write(self, buf)
+    }
+
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
+        T::flush(self)
+    }
+}
