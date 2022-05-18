@@ -14,10 +14,12 @@ categories = [
 [features]
 async = ["dep:futures"]
 std = ["futures?/std"]
+tokio = ["async", "dep:tokio"]
 
 [dependencies]
 defmt = { version = "0.3", optional = true }
 futures = { version = "0.3.21", default-features = false, optional = true }
+tokio = { version = "1", features = ["net"], default-features = false, optional = true }
 log = { version = "0.4.14", optional = true }
 
 [package.metadata.docs.rs]
