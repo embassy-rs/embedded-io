@@ -70,12 +70,7 @@ impl<T: futures::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromFut
         Self: 'a;
 
     fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        let pos = match pos {
-            crate::SeekFrom::Start(n) => futures::io::SeekFrom(n),
-            crate::SeekFrom::End(n) => futures::io::SeekFrom(n),
-            crate::SeekFrom::Current(n) => futures::io::SeekFrom(n),
-        };
-        poll_fn(|cx| Pin::new(&mut self.inner).poll_seek(cx, pos))
+        poll_fn(move |cx| Pin::new(&mut self.inner).poll_seek(cx, pos.into()))
     }
 }
 
