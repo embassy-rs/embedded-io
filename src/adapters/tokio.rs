@@ -83,11 +83,9 @@ impl<T: tokio::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromTokio
             // Therefor it is recommended to call `poll_complete` before any call to `start_seek`.
             match Pin::new(&mut self.inner).poll_complete(cx) {
                 Poll::Ready(r) => match r {
-                    Ok(_) => {
-                        match Pin::new(&mut self.inner).start_seek(pos.into()) {
-                            Ok(()) => Pin::new(&mut self.inner).poll_complete(cx),
-                            Err(e) => Poll::Ready(Err(e)),
-                        }
+                    Ok(_) => match Pin::new(&mut self.inner).start_seek(pos.into()) {
+                        Ok(()) => Pin::new(&mut self.inner).poll_complete(cx),
+                        Err(e) => Poll::Ready(Err(e)),
                     },
                     Err(e) => Poll::Ready(Err(e)),
                 },

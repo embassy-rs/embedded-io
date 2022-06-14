@@ -88,7 +88,6 @@ impl Into<SeekFrom> for std::io::SeekFrom {
     }
 }
 
-
 /// Base trait for all IO traits.
 ///
 /// All IO operations of all traits return the error defined in this trait.
