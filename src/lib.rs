@@ -66,9 +66,9 @@ pub enum SeekFrom {
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl Into<std::io::SeekFrom> for SeekFrom {
-    fn into(self) -> std::io::SeekFrom {
-        match self {
+impl From<SeekFrom> for std::io::SeekFrom {
+    fn from(pos: SeekFrom) -> Self {
+        match pos {
             SeekFrom::Start(n) => std::io::SeekFrom::Start(n),
             SeekFrom::End(n) => std::io::SeekFrom::End(n),
             SeekFrom::Current(n) => std::io::SeekFrom::Current(n),
@@ -78,9 +78,9 @@ impl Into<std::io::SeekFrom> for SeekFrom {
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl Into<SeekFrom> for std::io::SeekFrom {
-    fn into(self) -> SeekFrom {
-        match self {
+impl From<std::io::SeekFrom> for SeekFrom {
+    fn from(pos: std::io::SeekFrom) -> SeekFrom {
+        match pos {
             std::io::SeekFrom::Start(n) => SeekFrom::Start(n),
             std::io::SeekFrom::End(n) => SeekFrom::End(n),
             std::io::SeekFrom::Current(n) => SeekFrom::Current(n),
