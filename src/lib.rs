@@ -50,6 +50,44 @@ impl Error for ErrorKind {
     }
 }
 
+/// Enumeration of possible methods to seek within an I/O object.
+///
+/// Semantics are the same as [`std::io::SeekFrom`], check its documentation for details.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum SeekFrom {
+    /// Sets the offset to the provided number of bytes.
+    Start(u64),
+    /// Sets the offset to the size of this object plus the specified number of bytes.
+    End(i64),
+    /// Sets the offset to the current position plus the specified number of bytes.
+    Current(i64),
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl From<SeekFrom> for std::io::SeekFrom {
+    fn from(pos: SeekFrom) -> Self {
+        match pos {
+            SeekFrom::Start(n) => std::io::SeekFrom::Start(n),
+            SeekFrom::End(n) => std::io::SeekFrom::End(n),
+            SeekFrom::Current(n) => std::io::SeekFrom::Current(n),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl From<std::io::SeekFrom> for SeekFrom {
+    fn from(pos: std::io::SeekFrom) -> SeekFrom {
+        match pos {
+            std::io::SeekFrom::Start(n) => SeekFrom::Start(n),
+            std::io::SeekFrom::End(n) => SeekFrom::End(n),
+            std::io::SeekFrom::Current(n) => SeekFrom::Current(n),
+        }
+    }
+}
+
 /// Base trait for all IO traits.
 ///
 /// All IO operations of all traits return the error defined in this trait.

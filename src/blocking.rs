@@ -133,6 +133,25 @@ pub trait Write: crate::Io {
     }
 }
 
+/// Blocking seek within streams.
+///
+/// Semantics are the same as [`std::io::Seek`], check its documentation for details.
+pub trait Seek: crate::Io {
+    /// Seek to an offset, in bytes, in a stream.
+    fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error>;
+
+    /// Rewind to the beginning of a stream.
+    fn rewind(&mut self) -> Result<(), Self::Error> {
+        self.seek(crate::SeekFrom::Start(0))?;
+        Ok(())
+    }
+
+    /// Returns the current seek position from the start of the stream.
+    fn stream_position(&mut self) -> Result<u64, Self::Error> {
+        self.seek(crate::SeekFrom::Current(0))
+    }
+}
+
 impl<T: ?Sized + Read> Read for &mut T {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
@@ -159,6 +178,13 @@ impl<T: ?Sized + Write> Write for &mut T {
     #[inline]
     fn flush(&mut self) -> Result<(), Self::Error> {
         T::flush(self)
+    }
+}
+
+impl<T: ?Sized + Seek> Seek for &mut T {
+    #[inline]
+    fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        T::seek(self, pos)
     }
 }
 
@@ -255,6 +281,15 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
     #[inline]
     fn flush(&mut self) -> Result<(), Self::Error> {
         T::flush(self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+impl<T: ?Sized + Seek> Seek for alloc::boxed::Box<T> {
+    #[inline]
+    fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        T::seek(self, pos)
     }
 }
 

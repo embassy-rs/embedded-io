@@ -64,6 +64,16 @@ impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromF
     }
 }
 
+impl<T: futures::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromFutures<T> {
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    where
+        Self: 'a;
+
+    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
+        poll_fn(move |cx| Pin::new(&mut self.inner).poll_seek(cx, pos.into()))
+    }
+}
+
 // TODO: ToFutures.
 // It's a bit tricky because futures::io is "stateless", while we're "stateful" (we
 // return futures that borrow Self and get polled for the duration of the operation.)
