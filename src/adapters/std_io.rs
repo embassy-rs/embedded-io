@@ -49,6 +49,12 @@ impl<T: std::io::Write + ?Sized> crate::blocking::Write for FromStd<T> {
     }
 }
 
+impl<T: std::io::Seek + ?Sized> crate::blocking::Seek for FromStd<T> {
+    fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        self.inner.seek(pos.into())
+    }
+}
+
 /// Adapter to `std::io` traits.
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub struct ToStd<T: ?Sized> {
@@ -91,5 +97,11 @@ impl<T: crate::blocking::Write + ?Sized> std::io::Write for ToStd<T> {
     }
     fn flush(&mut self) -> Result<(), std::io::Error> {
         self.inner.flush().map_err(to_io_error)
+    }
+}
+
+impl<T: crate::blocking::Seek + ?Sized> std::io::Seek for ToStd<T> {
+    fn seek(&mut self, pos: std::io::SeekFrom) -> Result<u64, std::io::Error> {
+        self.inner.seek(pos.into()).map_err(to_io_error)
     }
 }

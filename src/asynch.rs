@@ -97,6 +97,37 @@ pub trait Write: crate::Io {
     }
 }
 
+type RewindFuture<'a, T>
+where
+    T: Seek + ?Sized + 'a,
+= impl Future<Output = Result<(), T::Error>>;
+
+/// Async seek within streams.
+///
+/// Semantics are the same as [`std::io::Seek`], check its documentation for details.
+pub trait Seek: crate::Io {
+    /// Future returned by `seek`.
+    type SeekFuture<'a>: Future<Output = Result<u64, Self::Error>>
+    where
+        Self: 'a;
+
+    /// Seek to an offset, in bytes, in a stream.
+    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a>;
+
+    /// Rewind to the beginning of a stream.
+    fn rewind<'a>(&'a mut self) -> RewindFuture<'a, Self> {
+        async move {
+            self.seek(crate::SeekFrom::Start(0)).await?;
+            Ok(())
+        }
+    }
+
+    /// Returns the current seek position from the start of the stream.
+    fn stream_position<'a>(&'a mut self) -> Self::SeekFuture<'a> {
+        self.seek(crate::SeekFrom::Current(0))
+    }
+}
+
 impl<T: ?Sized + Read> Read for &mut T {
     type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
     where
@@ -139,6 +170,17 @@ impl<T: ?Sized + Write> Write for &mut T {
     #[inline]
     fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
         T::flush(self)
+    }
+}
+
+impl<T: ?Sized + Seek> Seek for &mut T {
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
+        T::seek(self, pos)
     }
 }
 
@@ -271,6 +313,19 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
     #[inline]
     fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
         T::flush(self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+impl<T: ?Sized + Seek> Seek for alloc::boxed::Box<T> {
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
+        T::seek(self, pos)
     }
 }
 

@@ -72,6 +72,31 @@ impl<T: tokio::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromTok
     }
 }
 
+impl<T: tokio::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromTokio<T> {
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    where
+        Self: 'a;
+
+    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
+        poll_fn::poll_fn(move |cx| {
+            // Note: `start_seek` can return an error if there is another seek in progress.
+            // Therefor it is recommended to call `poll_complete` before any call to `start_seek`.
+            match Pin::new(&mut self.inner).poll_complete(cx) {
+                Poll::Ready(r) => match r {
+                    Ok(_) => {
+                        match Pin::new(&mut self.inner).start_seek(pos.into()) {
+                            Ok(()) => Pin::new(&mut self.inner).poll_complete(cx),
+                            Err(e) => Poll::Ready(Err(e)),
+                        }
+                    },
+                    Err(e) => Poll::Ready(Err(e)),
+                },
+                Poll::Pending => Poll::Pending,
+            }
+        })
+    }
+}
+
 // TODO: ToTokio.
 // It's a bit tricky because tokio::io is "stateless", while we're "stateful" (we
 // return futures that borrow Self and get polled for the duration of the operation.)
