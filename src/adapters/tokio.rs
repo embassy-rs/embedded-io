@@ -78,20 +78,13 @@ impl<T: tokio::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromTokio
         Self: 'a;
 
     fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        poll_fn::poll_fn(move |cx| {
+        async move {
             // Note: `start_seek` can return an error if there is another seek in progress.
             // Therefor it is recommended to call `poll_complete` before any call to `start_seek`.
-            match Pin::new(&mut self.inner).poll_complete(cx) {
-                Poll::Ready(r) => match r {
-                    Ok(_) => match Pin::new(&mut self.inner).start_seek(pos.into()) {
-                        Ok(()) => Pin::new(&mut self.inner).poll_complete(cx),
-                        Err(e) => Poll::Ready(Err(e)),
-                    },
-                    Err(e) => Poll::Ready(Err(e)),
-                },
-                Poll::Pending => Poll::Pending,
-            }
-        })
+            poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await?;
+            Pin::new(&mut self.inner).start_seek(pos.into())?;
+            poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await
+        }
     }
 }
 
