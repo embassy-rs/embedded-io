@@ -38,7 +38,7 @@ impl<T: ?Sized> crate::Io for FromFutures<T> {
 }
 
 impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromFutures<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -48,11 +48,11 @@ impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromFut
 }
 
 impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromFutures<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -65,7 +65,7 @@ impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromF
 }
 
 impl<T: futures::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromFutures<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
     where
         Self: 'a;
 

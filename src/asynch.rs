@@ -7,7 +7,7 @@ pub use crate::blocking::ReadExactError;
 type ReadExactFuture<'a, T>
 where
     T: Read + ?Sized + 'a,
-= impl Future<Output = Result<(), ReadExactError<T::Error>>>;
+= impl Future<Output = Result<(), ReadExactError<T::Error>>> + 'a;
 
 /// Async reader.
 ///
@@ -59,7 +59,7 @@ pub trait BufRead: crate::Io {
 type WriteAllFuture<'a, T>
 where
     T: Write + ?Sized + 'a,
-= impl Future<Output = Result<(), T::Error>>;
+= impl Future<Output = Result<(), T::Error>> + 'a;
 
 /// Async writer.
 ///
@@ -100,7 +100,7 @@ pub trait Write: crate::Io {
 type RewindFuture<'a, T>
 where
     T: Seek + ?Sized + 'a,
-= impl Future<Output = Result<(), T::Error>>;
+= impl Future<Output = Result<(), T::Error>> + 'a;
 
 /// Async seek within streams.
 ///
@@ -129,7 +129,7 @@ pub trait Seek: crate::Io {
 }
 
 impl<T: ?Sized + Read> Read for &mut T {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -154,7 +154,7 @@ impl<T: ?Sized + BufRead> BufRead for &mut T {
 }
 
 impl<T: ?Sized + Write> Write for &mut T {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -163,7 +163,7 @@ impl<T: ?Sized + Write> Write for &mut T {
         T::write(self, buf)
     }
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -174,7 +174,7 @@ impl<T: ?Sized + Write> Write for &mut T {
 }
 
 impl<T: ?Sized + Seek> Seek for &mut T {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -189,7 +189,7 @@ impl<T: ?Sized + Seek> Seek for &mut T {
 /// Note that reading updates the slice to point to the yet unread part.
 /// The slice will be empty when EOF is reached.
 impl Read for &[u8] {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -240,7 +240,7 @@ impl BufRead for &[u8] {
 /// return short writes: ultimately, `Ok(0)`; in this situation, `write_all` returns an error of
 /// kind `ErrorKind::WriteZero`.
 impl Write for &mut [u8] {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -268,7 +268,7 @@ impl Write for &mut [u8] {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -297,7 +297,7 @@ impl<T: ?Sized + BufRead> BufRead for alloc::boxed::Box<T> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -306,7 +306,7 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
         T::write(self, buf)
     }
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -319,7 +319,7 @@ impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Seek> Seek for alloc::boxed::Box<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -332,7 +332,7 @@ impl<T: ?Sized + Seek> Seek for alloc::boxed::Box<T> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl Write for alloc::vec::Vec<u8> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 

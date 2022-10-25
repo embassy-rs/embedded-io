@@ -37,7 +37,7 @@ impl<T: ?Sized> crate::Io for FromTokio<T> {
 }
 
 impl<T: tokio::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromTokio<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -56,11 +56,11 @@ impl<T: tokio::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromTokio
 }
 
 impl<T: tokio::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromTokio<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>>
+    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
     where
         Self: 'a;
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
+    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
     where
         Self: 'a;
 
@@ -73,7 +73,7 @@ impl<T: tokio::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromTok
 }
 
 impl<T: tokio::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromTokio<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>>
+    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
     where
         Self: 'a;
 
