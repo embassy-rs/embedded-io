@@ -1,4 +1,3 @@
-use core::future::Future;
 use core::pin::Pin;
 
 use futures::future::poll_fn;
@@ -38,39 +37,24 @@ impl<T: ?Sized> crate::Io for FromFutures<T> {
 }
 
 impl<T: futures::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromFutures<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
-        poll_fn(|cx| Pin::new(&mut self.inner).poll_read(cx, buf))
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        poll_fn(|cx| Pin::new(&mut self.inner).poll_read(cx, buf)).await
     }
 }
 
 impl<T: futures::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromFutures<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        poll_fn(|cx| Pin::new(&mut self.inner).poll_write(cx, buf))
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        poll_fn(|cx| Pin::new(&mut self.inner).poll_write(cx, buf)).await
     }
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        poll_fn(|cx| Pin::new(&mut self.inner).poll_flush(cx))
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        poll_fn(|cx| Pin::new(&mut self.inner).poll_flush(cx)).await
     }
 }
 
 impl<T: futures::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromFutures<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        poll_fn(move |cx| Pin::new(&mut self.inner).poll_seek(cx, pos.into()))
+    async fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        poll_fn(move |cx| Pin::new(&mut self.inner).poll_seek(cx, pos.into())).await
     }
 }
 

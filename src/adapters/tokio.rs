@@ -1,4 +1,3 @@
-use core::future::Future;
 use core::pin::Pin;
 use core::task::Poll;
 
@@ -37,11 +36,7 @@ impl<T: ?Sized> crate::Io for FromTokio<T> {
 }
 
 impl<T: tokio::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromTokio<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         poll_fn::poll_fn(|cx| {
             let mut buf = tokio::io::ReadBuf::new(buf);
             match Pin::new(&mut self.inner).poll_read(cx, &mut buf) {
@@ -52,39 +47,27 @@ impl<T: tokio::io::AsyncRead + Unpin + ?Sized> crate::asynch::Read for FromTokio
                 Poll::Pending => Poll::Pending,
             }
         })
+        .await
     }
 }
 
 impl<T: tokio::io::AsyncWrite + Unpin + ?Sized> crate::asynch::Write for FromTokio<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_write(cx, buf))
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_write(cx, buf)).await
     }
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_flush(cx))
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_flush(cx)).await
     }
 }
 
 impl<T: tokio::io::AsyncSeek + Unpin + ?Sized> crate::asynch::Seek for FromTokio<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
-    where
-        Self: 'a;
-
-    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        async move {
-            // Note: `start_seek` can return an error if there is another seek in progress.
-            // Therefor it is recommended to call `poll_complete` before any call to `start_seek`.
-            poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await?;
-            Pin::new(&mut self.inner).start_seek(pos.into())?;
-            poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await
-        }
+    async fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        // Note: `start_seek` can return an error if there is another seek in progress.
+        // Therefor it is recommended to call `poll_complete` before any call to `start_seek`.
+        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await?;
+        Pin::new(&mut self.inner).start_seek(pos.into())?;
+        poll_fn::poll_fn(|cx| Pin::new(&mut self.inner).poll_complete(cx)).await
     }
 }
 

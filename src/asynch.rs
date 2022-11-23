@@ -1,41 +1,26 @@
 //! Async IO traits
 
-use core::future::Future;
-
 pub use crate::blocking::ReadExactError;
 
-type ReadExactFuture<'a, T>
-where
-    T: Read + ?Sized + 'a,
-= impl Future<Output = Result<(), ReadExactError<T::Error>>> + 'a;
-
-/// Async reader.
 ///
 /// Semantics are the same as [`std::io::Read`], check its documentation for details.
 pub trait Read: crate::Io {
-    /// Future returned by `read`.
-    type ReadFuture<'a>: Future<Output = Result<usize, Self::Error>>
-    where
-        Self: 'a;
-
     /// Pull some bytes from this source into the specified buffer, returning how many bytes were read.
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a>;
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error>;
 
     /// Read the exact number of bytes required to fill `buf`.
-    fn read_exact<'a>(&'a mut self, mut buf: &'a mut [u8]) -> ReadExactFuture<'a, Self> {
-        async move {
-            while !buf.is_empty() {
-                match self.read(buf).await {
-                    Ok(0) => break,
-                    Ok(n) => buf = &mut buf[n..],
-                    Err(e) => return Err(ReadExactError::Other(e)),
-                }
+    async fn read_exact(&mut self, mut buf: &mut [u8]) -> Result<(), ReadExactError<Self::Error>> {
+        while !buf.is_empty() {
+            match self.read(buf).await {
+                Ok(0) => break,
+                Ok(n) => buf = &mut buf[n..],
+                Err(e) => return Err(ReadExactError::Other(e)),
             }
-            if !buf.is_empty() {
-                Err(ReadExactError::UnexpectedEof)
-            } else {
-                Ok(())
-            }
+        }
+        if !buf.is_empty() {
+            Err(ReadExactError::UnexpectedEof)
+        } else {
+            Ok(())
         }
     }
 }
@@ -44,108 +29,68 @@ pub trait Read: crate::Io {
 ///
 /// Semantics are the same as [`std::io::BufRead`], check its documentation for details.
 pub trait BufRead: crate::Io {
-    /// Future returned by `fill_buf`.
-    type FillBufFuture<'a>: Future<Output = Result<&'a [u8], Self::Error>>
-    where
-        Self: 'a;
-
     /// Return the contents of the internal buffer, filling it with more data from the inner reader if it is empty.
-    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a>;
+    async fn fill_buf(&mut self) -> Result<&[u8], Self::Error>;
 
     /// Tell this buffer that `amt` bytes have been consumed from the buffer, so they should no longer be returned in calls to `fill_buf`.
     fn consume(&mut self, amt: usize);
 }
 
-type WriteAllFuture<'a, T>
-where
-    T: Write + ?Sized + 'a,
-= impl Future<Output = Result<(), T::Error>> + 'a;
-
 /// Async writer.
 ///
 /// Semantics are the same as [`std::io::Write`], check its documentation for details.
 pub trait Write: crate::Io {
-    /// Future returned by `write`.
-    type WriteFuture<'a>: Future<Output = Result<usize, Self::Error>>
-    where
-        Self: 'a;
-
     /// Write a buffer into this writer, returning how many bytes were written.
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a>;
-
-    /// Future returned by `flush`.
-    type FlushFuture<'a>: Future<Output = Result<(), Self::Error>>
-    where
-        Self: 'a;
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error>;
 
     /// Flush this output stream, ensuring that all intermediately buffered contents reach their destination.
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>;
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 
     /// Write an entire buffer into this writer.
-    fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> WriteAllFuture<'a, Self> {
-        async move {
-            let mut buf = buf;
-            while !buf.is_empty() {
-                match self.write(buf).await {
-                    Ok(0) => panic!("zero-length write."),
-                    Ok(n) => buf = &buf[n..],
-                    Err(e) => return Err(e),
-                }
+    async fn write_all(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        let mut buf = buf;
+        while !buf.is_empty() {
+            match self.write(buf).await {
+                Ok(0) => panic!("zero-length write."),
+                Ok(n) => buf = &buf[n..],
+                Err(e) => return Err(e),
             }
-            Ok(())
         }
+        Ok(())
     }
 }
-
-type RewindFuture<'a, T>
-where
-    T: Seek + ?Sized + 'a,
-= impl Future<Output = Result<(), T::Error>> + 'a;
 
 /// Async seek within streams.
 ///
 /// Semantics are the same as [`std::io::Seek`], check its documentation for details.
 pub trait Seek: crate::Io {
-    /// Future returned by `seek`.
-    type SeekFuture<'a>: Future<Output = Result<u64, Self::Error>>
-    where
-        Self: 'a;
-
     /// Seek to an offset, in bytes, in a stream.
-    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a>;
+    async fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error>;
 
     /// Rewind to the beginning of a stream.
-    fn rewind<'a>(&'a mut self) -> RewindFuture<'a, Self> {
-        async move {
-            self.seek(crate::SeekFrom::Start(0)).await?;
-            Ok(())
-        }
+    async fn rewind(&mut self) -> Result<(), Self::Error> {
+        self.seek(crate::SeekFrom::Start(0)).await?;
+        Ok(())
     }
 
     /// Returns the current seek position from the start of the stream.
-    fn stream_position<'a>(&'a mut self) -> Self::SeekFuture<'a> {
-        self.seek(crate::SeekFrom::Current(0))
+    async fn stream_position(&mut self) -> Result<u64, Self::Error> {
+        self.seek(crate::SeekFrom::Current(0)).await
     }
 }
 
 impl<T: ?Sized + Read> Read for &mut T {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
-        T::read(self, buf)
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        T::read(self, buf).await
     }
 }
 
 impl<T: ?Sized + BufRead> BufRead for &mut T {
-    type FillBufFuture<'a> = impl Future<Output = Result<&'a [u8], Self::Error>>
-    where
-        Self: 'a;
-
-    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a> {
-        T::fill_buf(self)
+    async fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        T::fill_buf(self).await
     }
 
     fn consume(&mut self, amt: usize) {
@@ -154,33 +99,21 @@ impl<T: ?Sized + BufRead> BufRead for &mut T {
 }
 
 impl<T: ?Sized + Write> Write for &mut T {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        T::write(self, buf)
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        T::write(self, buf).await
     }
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        T::flush(self)
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        T::flush(self).await
     }
 }
 
 impl<T: ?Sized + Seek> Seek for &mut T {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        T::seek(self, pos)
+    async fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        T::seek(self, pos).await
     }
 }
 
@@ -189,39 +122,29 @@ impl<T: ?Sized + Seek> Seek for &mut T {
 /// Note that reading updates the slice to point to the yet unread part.
 /// The slice will be empty when EOF is reached.
 impl Read for &[u8] {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
-        async move {
-            let amt = core::cmp::min(buf.len(), self.len());
-            let (a, b) = self.split_at(amt);
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        let amt = core::cmp::min(buf.len(), self.len());
+        let (a, b) = self.split_at(amt);
 
-            // First check if the amount of bytes we want to read is small:
-            // `copy_from_slice` will generally expand to a call to `memcpy`, and
-            // for a single byte the overhead is significant.
-            if amt == 1 {
-                buf[0] = a[0];
-            } else {
-                buf[..amt].copy_from_slice(a);
-            }
-
-            *self = b;
-            Ok(amt)
+        // First check if the amount of bytes we want to read is small:
+        // `copy_from_slice` will generally expand to a call to `memcpy`, and
+        // for a single byte the overhead is significant.
+        if amt == 1 {
+            buf[0] = a[0];
+        } else {
+            buf[..amt].copy_from_slice(a);
         }
+
+        *self = b;
+        Ok(amt)
     }
 }
 
 impl BufRead for &[u8] {
-    type FillBufFuture<'a> = impl Future<Output = Result<&'a [u8], Self::Error>>
-    where
-        Self: 'a;
-
     #[inline]
-    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a> {
-        async move { Ok(*self) }
+    async fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        Ok(*self)
     }
 
     #[inline]
@@ -240,55 +163,34 @@ impl BufRead for &[u8] {
 /// return short writes: ultimately, `Ok(0)`; in this situation, `write_all` returns an error of
 /// kind `ErrorKind::WriteZero`.
 impl Write for &mut [u8] {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        async move {
-            let amt = core::cmp::min(buf.len(), self.len());
-            let (a, b) = core::mem::replace(self, &mut []).split_at_mut(amt);
-            a.copy_from_slice(&buf[..amt]);
-            *self = b;
-            Ok(amt)
-        }
-    }
-
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
-    where
-        Self: 'a;
-
-    #[inline]
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        async move { Ok(()) }
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        let amt = core::cmp::min(buf.len(), self.len());
+        let (a, b) = core::mem::replace(self, &mut []).split_at_mut(amt);
+        a.copy_from_slice(&buf[..amt]);
+        *self = b;
+        Ok(amt)
     }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Read> Read for alloc::boxed::Box<T> {
-    type ReadFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ReadFuture<'a> {
-        T::read(self, buf)
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        T::read(self, buf).await
     }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + BufRead> BufRead for alloc::boxed::Box<T> {
-    type FillBufFuture<'a> = impl Future<Output = Result<&'a [u8], Self::Error>>
-    where
-        Self: 'a;
-
-    fn fill_buf<'a>(&'a mut self) -> Self::FillBufFuture<'a> {
-        T::fill_buf(self)
+    #[inline]
+    async fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        T::fill_buf(self).await
     }
 
+    #[inline]
     fn consume(&mut self, amt: usize) {
         T::consume(self, amt)
     }
@@ -297,59 +199,32 @@ impl<T: ?Sized + BufRead> BufRead for alloc::boxed::Box<T> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Write> Write for alloc::boxed::Box<T> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        T::write(self, buf)
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        T::write(self, buf).await
     }
 
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        T::flush(self)
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        T::flush(self).await
     }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl<T: ?Sized + Seek> Seek for alloc::boxed::Box<T> {
-    type SeekFuture<'a> = impl Future<Output = Result<u64, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn seek<'a>(&'a mut self, pos: crate::SeekFrom) -> Self::SeekFuture<'a> {
-        T::seek(self, pos)
+    async fn seek(&mut self, pos: crate::SeekFrom) -> Result<u64, Self::Error> {
+        T::seek(self, pos).await
     }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 impl Write for alloc::vec::Vec<u8> {
-    type WriteFuture<'a> = impl Future<Output = Result<usize, Self::Error>> + 'a
-    where
-        Self: 'a;
-
     #[inline]
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::WriteFuture<'a> {
-        async move {
-            self.extend_from_slice(buf);
-            Ok(buf.len())
-        }
-    }
-
-    type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>
-    where
-        Self: 'a;
-
-    #[inline]
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
-        async move { Ok(()) }
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.extend_from_slice(buf);
+        Ok(buf.len())
     }
 }
