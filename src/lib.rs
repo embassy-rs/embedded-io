@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "async", feature(type_alias_impl_trait))]
+#![cfg_attr(feature = "async", feature(async_fn_in_trait, impl_trait_projections))]
+#![cfg_attr(feature = "async", allow(incomplete_features))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
