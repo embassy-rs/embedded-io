@@ -62,6 +62,12 @@ pub trait DirectReadHandle<'m> {
     }
 }
 
+impl<'m> DirectReadHandle<'m> for &'m[u8] {
+    fn as_slice(&self) -> &[u8] {
+        self
+    }
+}
+
 /// An unbuffered [`Read`] wrapper for [`DirectRead`].
 pub struct UnbufferedRead<T>
 where
@@ -261,6 +267,15 @@ impl BufRead for &[u8] {
     #[inline]
     fn consume(&mut self, amt: usize) {
         *self = &self[amt..];
+    }
+}
+
+impl DirectRead for &[u8] {
+    type Handle<'m> = &'m[u8];
+
+    #[inline]
+    async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error> {
+        Ok(self)
     }
 }
 
