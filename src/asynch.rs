@@ -36,6 +36,117 @@ pub trait BufRead: crate::Io {
     fn consume(&mut self, amt: usize);
 }
 
+/// Async direct reader
+pub trait DirectRead: crate::Io {
+    /// The read handle type for this reader
+    type Handle<'m>: DirectReadHandle<'m>;
+
+    /// Read the next portion from this source.
+    async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error>;
+}
+
+/// A direct read handle.
+///
+/// The buffer is returned to the source when the handle is dropped.
+pub trait DirectReadHandle<'m> {
+    /// Get the data slice.
+    ///
+    /// The entire data slice must be consumed.
+    fn as_slice(&self) -> &[u8];
+
+    /// Get whether the source has completed.
+    ///
+    /// There should be no more calls to [`DirectRead::read()`] after this.
+    fn is_completed(&self) -> bool {
+        self.as_slice().is_empty()
+    }
+}
+
+/// An unbuffered [`Read`] wrapper for [`DirectRead`].
+pub struct UnbufferedRead<T>
+where
+    T: crate::Io,
+{
+    source: T,
+    is_completed: bool,
+}
+
+impl<T> UnbufferedRead<T>
+where
+    T: crate::Io,
+{
+    /// Create a new unbuffered wrapper for [`DirectRead`] implementing [`Read`].
+    pub fn new(source: T) -> Self {
+        Self {
+            source,
+            is_completed: false,
+        }
+    }
+}
+
+/// An unbuffered read error
+#[derive(Debug)]
+pub enum UnbufferedReadError<T: crate::Error> {
+    /// The provided read buffer is too small to contain the entire slice returned by [`DirectRead::read()`].
+    BufferTooSmall,
+    /// Underlying i/o error
+    Io(T),
+}
+
+impl<T> From<T> for UnbufferedReadError<T>
+where
+    T: crate::Error,
+{
+    fn from(value: T) -> Self {
+        UnbufferedReadError::Io(value)
+    }
+}
+
+impl<T: crate::Error> crate::Error for UnbufferedReadError<T> {
+    fn kind(&self) -> crate::ErrorKind {
+        match self {
+            UnbufferedReadError::BufferTooSmall => crate::ErrorKind::Other,
+            UnbufferedReadError::Io(other) => other.kind(),
+        }
+    }
+}
+
+impl<T> crate::Io for UnbufferedRead<T>
+where
+    T: crate::Io,
+{
+    type Error = UnbufferedReadError<T::Error>;
+}
+
+impl<T> Read for UnbufferedRead<T>
+where
+    T: DirectRead,
+{
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        if self.is_completed {
+            return Ok(0);
+        }
+
+        loop {
+            let handle = self.source.read().await?;
+
+            // We cannot return empty slices as that would signify completion.
+            if !handle.as_slice().is_empty() || handle.is_completed() {
+                self.is_completed = handle.is_completed();
+
+                let slice = handle.as_slice();
+                if buf.len() >= slice.len() {
+                    let len = core::cmp::min(slice.len(), buf.len());
+                    buf[..len].copy_from_slice(&slice[..len]);
+                    return Ok(len);
+                } else {
+                    return Err(UnbufferedReadError::BufferTooSmall);
+                }
+            }
+        }
+    }
+}
+
 /// Async writer.
 ///
 /// Semantics are the same as [`std::io::Write`], check its documentation for details.
