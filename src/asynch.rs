@@ -62,7 +62,7 @@ pub trait DirectReadHandle<'m> {
     }
 }
 
-impl<'m> DirectReadHandle<'m> for &'m[u8] {
+impl<'m> DirectReadHandle<'m> for &'m [u8] {
     fn as_slice(&self) -> &[u8] {
         self
     }
@@ -271,7 +271,7 @@ impl BufRead for &[u8] {
 }
 
 impl DirectRead for &[u8] {
-    type Handle<'m> = &'m[u8];
+    type Handle<'m> = &'m [u8];
 
     #[inline]
     async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error> {
