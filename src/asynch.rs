@@ -57,6 +57,8 @@ pub trait DirectReadHandle<'m> {
     /// Get whether the source has completed.
     ///
     /// There should be no more calls to [`DirectRead::read()`] after this.
+    /// The final handle may not necessarily be empty, i.e. [`DirectReadHandle::is_completed()`] may return true for a
+    /// non empty data slice if the slice is the last to be produced by the source.
     fn is_completed(&self) -> bool {
         self.as_slice().is_empty()
     }
