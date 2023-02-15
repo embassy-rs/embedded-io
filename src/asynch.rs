@@ -277,7 +277,9 @@ impl DirectRead for &[u8] {
 
     #[inline]
     async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error> {
-        Ok(self)
+        let (handle, empty) = self.split_at(self.len());
+        *self = empty;
+        Ok(handle)
     }
 }
 
