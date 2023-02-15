@@ -42,9 +42,7 @@ pub trait DirectRead: crate::Io {
     type Handle<'m>: DirectReadHandle<'m>;
 
     /// Read the next portion from this source.
-    async fn read<'r, 'm>(&'r mut self) -> Result<Self::Handle<'m>, Self::Error>
-    where
-        'r: 'm;
+    async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error>;
 }
 
 /// A direct read handle.
@@ -278,10 +276,7 @@ impl DirectRead for &[u8] {
     type Handle<'m> = &'m [u8];
 
     #[inline]
-    async fn read<'r, 'm>(&'r mut self) -> Result<Self::Handle<'m>, Self::Error>
-    where
-        'r: 'm,
-    {
+    async fn read<'m>(&'m mut self) -> Result<Self::Handle<'m>, Self::Error> {
         Ok(self)
     }
 }
