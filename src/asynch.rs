@@ -6,6 +6,7 @@ pub use crate::blocking::ReadExactError;
 /// Semantics are the same as [`std::io::Read`], check its documentation for details.
 pub trait Read: crate::Io {
     /// Pull some bytes from this source into the specified buffer, returning how many bytes were read.
+    #[must_use = "the number of read bytes may be less than the buffer length"]
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error>;
 
     /// Read the exact number of bytes required to fill `buf`.
@@ -41,6 +42,7 @@ pub trait BufRead: crate::Io {
 /// Semantics are the same as [`std::io::Write`], check its documentation for details.
 pub trait Write: crate::Io {
     /// Write a buffer into this writer, returning how many bytes were written.
+    #[must_use = "the number of written bytes may be less than the buffer length"]
     async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error>;
 
     /// Flush this output stream, ensuring that all intermediately buffered contents reach their destination.
