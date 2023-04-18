@@ -2,6 +2,7 @@ use super::to_io_error;
 
 /// Adapter from `std::io` traits.
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+#[derive(Clone)]
 pub struct FromStd<T: ?Sized> {
     inner: T,
 }
