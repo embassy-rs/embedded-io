@@ -40,6 +40,16 @@ impl<T: std::io::Read + ?Sized> crate::blocking::Read for FromStd<T> {
     }
 }
 
+impl<T: std::io::BufRead + ?Sized> crate::blocking::BufRead for FromStd<T> {
+    fn fill_buf(&mut self) -> Result<&[u8], Self::Error> {
+        self.inner.fill_buf()
+    }
+
+    fn consume(&mut self, amt: usize) {
+        self.inner.consume(amt)
+    }
+}
+
 impl<T: std::io::Write + ?Sized> crate::blocking::Write for FromStd<T> {
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
         self.inner.write(buf)
