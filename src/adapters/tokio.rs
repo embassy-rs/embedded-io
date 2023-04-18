@@ -1,8 +1,9 @@
 use core::pin::Pin;
 use core::task::Poll;
 
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 /// Adapter from `tokio::io` traits.
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+#[derive(Clone)]
 pub struct FromTokio<T: ?Sized> {
     inner: T,
 }

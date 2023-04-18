@@ -2,8 +2,9 @@ use core::pin::Pin;
 
 use futures::future::poll_fn;
 
-#[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
 /// Adapter from `futures::io` traits.
+#[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
+#[derive(Clone)]
 pub struct FromFutures<T: ?Sized> {
     inner: T,
 }
