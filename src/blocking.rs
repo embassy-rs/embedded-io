@@ -14,7 +14,7 @@ pub enum ReadExactError<E> {
 
 impl<E> From<E> for ReadExactError<E> {
     fn from(err: E) -> Self {
-        ReadExactError::Other(err)
+        Self::Other(err)
     }
 }
 
@@ -39,6 +39,12 @@ pub enum WriteFmtError<E> {
     Other(E),
 }
 
+impl<E> From<E> for WriteFmtError<E> {
+    fn from(err: E) -> Self {
+        Self::Other(err)
+    }
+}
+
 impl<E: fmt::Debug> fmt::Display for WriteFmtError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -58,6 +64,12 @@ pub enum WriteAllError<E> {
     Other(E),
 }
 
+impl<E> From<E> for WriteAllError<E> {
+    fn from(err: E) -> Self {
+        Self::Other(err)
+    }
+}
+
 impl<E: fmt::Debug> fmt::Display for WriteAllError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -66,6 +78,7 @@ impl<E: fmt::Debug> fmt::Display for WriteAllError<E> {
 
 #[cfg(feature = "std")]
 impl<E: fmt::Debug> std::error::Error for WriteAllError<E> {}
+
 /// Blocking reader.
 ///
 /// Semantics are the same as [`std::io::Read`], check its documentation for details.
