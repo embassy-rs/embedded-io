@@ -12,6 +12,12 @@ pub enum ReadExactError<E> {
     Other(E),
 }
 
+impl<E> From<E> for ReadExactError<E> {
+    fn from(err: E) -> Self {
+        ReadExactError::Other(err)
+    }
+}
+
 impl<E: fmt::Debug> fmt::Display for ReadExactError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
