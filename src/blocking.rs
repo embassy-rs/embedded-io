@@ -25,6 +25,8 @@ impl<E: fmt::Debug> std::error::Error for ReadExactError<E> {}
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum WriteFmtError<E> {
+    /// [`Write::write`] wrote zero bytes
+    WriteZero,
     /// An error was encountered while formatting.
     FmtError,
     /// Error returned by the inner Write.
@@ -40,6 +42,24 @@ impl<E: fmt::Debug> fmt::Display for WriteFmtError<E> {
 #[cfg(feature = "std")]
 impl<E: fmt::Debug> std::error::Error for WriteFmtError<E> {}
 
+/// Error returned by [`Write::write_all`]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum WriteAllError<E> {
+    /// [`Write::write`] wrote zero bytes
+    WriteZero,
+    /// Error returned by the inner Write.
+    Other(E),
+}
+
+impl<E: fmt::Debug> fmt::Display for WriteAllError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<E: fmt::Debug> std::error::Error for WriteAllError<E> {}
 /// Blocking reader.
 ///
 /// Semantics are the same as [`std::io::Read`], check its documentation for details.
@@ -86,12 +106,12 @@ pub trait Write: crate::Io {
     fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Write an entire buffer into this writer.
-    fn write_all(&mut self, mut buf: &[u8]) -> Result<(), Self::Error> {
+    fn write_all(&mut self, mut buf: &[u8]) -> Result<(), WriteAllError<Self::Error>> {
         while !buf.is_empty() {
             match self.write(buf) {
-                Ok(0) => panic!("zero-length write."),
+                Ok(0) => return Err(WriteAllError::WriteZero),
                 Ok(n) => buf = &buf[n..],
-                Err(e) => return Err(e),
+                Err(e) => return Err(WriteAllError::Other(e)),
             }
         }
         Ok(())
@@ -103,7 +123,7 @@ pub trait Write: crate::Io {
         // off I/O errors. instead of discarding them
         struct Adapter<'a, T: Write + ?Sized + 'a> {
             inner: &'a mut T,
-            error: Result<(), T::Error>,
+            error: Result<(), WriteAllError<T::Error>>,
         }
 
         impl<T: Write + ?Sized> fmt::Write for Adapter<'_, T> {
@@ -126,7 +146,10 @@ pub trait Write: crate::Io {
             Ok(()) => Ok(()),
             Err(..) => match output.error {
                 // check if the error came from the underlying `Write` or not
-                Err(e) => Err(WriteFmtError::Other(e)),
+                Err(e) => match e {
+                    WriteAllError::WriteZero => Err(WriteFmtError::WriteZero),
+                    WriteAllError::Other(e) => Err(WriteFmtError::Other(e)),
+                },
                 Ok(()) => Err(WriteFmtError::FmtError),
             },
         }

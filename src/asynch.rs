@@ -1,6 +1,7 @@
 //! Async IO traits
 
 pub use crate::blocking::ReadExactError;
+pub use crate::blocking::WriteAllError;
 
 ///
 /// Semantics are the same as [`std::io::Read`], check its documentation for details.
@@ -49,13 +50,13 @@ pub trait Write: crate::Io {
     }
 
     /// Write an entire buffer into this writer.
-    async fn write_all(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+    async fn write_all(&mut self, buf: &[u8]) -> Result<(), WriteAllError<Self::Error>> {
         let mut buf = buf;
         while !buf.is_empty() {
             match self.write(buf).await {
-                Ok(0) => panic!("zero-length write."),
+                Ok(0) => return Err(WriteAllError::WriteZero),
                 Ok(n) => buf = &buf[n..],
-                Err(e) => return Err(e),
+                Err(e) => return Err(WriteAllError::Other(e)),
             }
         }
         Ok(())
