@@ -1,3 +1,7 @@
+# ⚠️ REPOSITORY ARCHIVED ⚠️
+
+Moved to https://github.com/rust-embedded/embedded-hal
+
 # embedded-io
 
 [![Documentation](https://docs.rs/embedded-io/badge.svg)](https://docs.rs/embedded-io)
